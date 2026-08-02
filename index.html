@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="referrer" content="no-referrer" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <title>Puerto Rico Prep Sprint</title>
+  <style>
+    :root { --ink:#172033; --muted:#687189; --line:#dde2ec; --paper:#fff; --bg:#f6f7fb; --blue:#2357d8; --green:#18794e; --red:#c0352b; --orange:#b45309; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:var(--bg); font:16px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    button, input { font:inherit; }
+    button { cursor:pointer; }
+    .wrap { width:min(940px, calc(100% - 28px)); margin:0 auto; padding:28px 0 60px; }
+    header { display:flex; justify-content:space-between; align-items:flex-start; gap:24px; margin-bottom:18px; }
+    h1 { margin:0 0 6px; font-size:clamp(1.65rem,4vw,2.35rem); line-height:1.1; }
+    .subtitle { margin:0; color:var(--muted); }
+    .clock { flex:0 0 auto; padding:9px 12px; border:1px solid var(--line); border-radius:10px; background:var(--paper); font-weight:700; }
+    .summary { display:grid; grid-template-columns:1.4fr .8fr .8fr; gap:12px; margin-bottom:16px; }
+    .panel { border:1px solid var(--line); border-radius:14px; background:var(--paper); padding:16px; box-shadow:0 4px 14px rgba(23,32,51,.04); }
+    .label { color:var(--muted); font-size:.78rem; font-weight:800; text-transform:uppercase; letter-spacing:.08em; }
+    .big { margin-top:4px; font-size:1.75rem; font-weight:850; letter-spacing:-.03em; }
+    .progress { height:10px; overflow:hidden; margin-top:12px; border-radius:999px; background:#e8ebf1; }
+    .progress > div { height:100%; width:0; border-radius:inherit; background:var(--green); transition:width .25s ease; }
+    .time-setup { margin-bottom:16px; }
+    .time-fields { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:10px; }
+    .time-field { display:grid; gap:5px; color:var(--muted); font-size:.84rem; font-weight:750; }
+    .time-field input { min-height:46px; width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:10px; color:var(--ink); background:var(--paper); font-weight:800; }
+    .time-help { margin:10px 0 0; color:var(--muted); font-size:.84rem; }
+    .actions { display:flex; flex-wrap:wrap; gap:9px; margin:14px 0 20px; }
+    .btn { min-height:43px; padding:9px 14px; border:1px solid var(--line); border-radius:10px; color:var(--ink); background:var(--paper); font-weight:750; }
+    .btn.primary { border-color:var(--blue); color:#fff; background:var(--blue); }
+    .btn.danger { color:var(--red); }
+    .btn:focus-visible, input:focus-visible { outline:3px solid rgba(35,87,216,.25); outline-offset:2px; }
+    .current { display:none; margin-bottom:18px; border:2px solid var(--blue); }
+    .current.show { display:block; }
+    .current-top { display:flex; justify-content:space-between; gap:16px; }
+    .current h2 { margin:5px 0 2px; font-size:1.35rem; }
+    .timer { color:var(--blue); font-size:clamp(2.25rem,9vw,4.2rem); font-weight:900; line-height:1; letter-spacing:-.055em; font-variant-numeric:tabular-nums; }
+    .status { display:inline-block; margin-top:10px; padding:5px 9px; border-radius:999px; background:#eaf0ff; color:#1742ad; font-size:.82rem; font-weight:800; }
+    .status.overtime { background:#fff0ed; color:var(--red); }
+    .bonus-note { margin:0 0 18px; padding:12px 14px; border:1px solid #b9dfca; border-radius:11px; background:#effaf4; color:#12603d; font-weight:750; }
+    .bonus-tag { display:inline-block; margin-top:5px; color:var(--green); font-size:.76rem; font-weight:850; }
+    .current.celebration { border-color:var(--green); background:linear-gradient(135deg,#effaf4,#fff); }
+    .current.celebration .timer { color:var(--green); }
+    .current-controls { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+    .note { margin:0; color:var(--muted); font-size:.92rem; }
+    h3 { margin:22px 0 10px; font-size:1rem; }
+    .schedule { display:grid; gap:10px; }
+    .block { display:grid; grid-template-columns:112px 44px 1fr auto; align-items:center; gap:12px; min-height:80px; padding:12px 14px; border:1px solid var(--line); border-radius:13px; background:var(--paper); }
+    .block.active { border:2px solid var(--blue); padding:11px 13px; }
+    .block.done { opacity:.64; background:#f4faf7; }
+    .block.done .task-name { text-decoration:line-through; }
+    .when { color:var(--muted); font-size:.82rem; font-weight:750; font-variant-numeric:tabular-nums; }
+    .mins { display:grid; place-items:center; width:42px; height:42px; border-radius:50%; background:#eef1f6; font-size:.78rem; font-weight:850; }
+    .task-name { font-weight:850; }
+    .details { margin-top:3px; color:var(--muted); font-size:.86rem; }
+    .check { width:26px; height:26px; accent-color:var(--green); }
+    .rule { margin-top:18px; padding:14px 16px; border-left:4px solid var(--orange); border-radius:8px; background:#fff8eb; color:#754009; }
+    .footer-actions { display:flex; justify-content:flex-end; margin-top:18px; }
+    @media (max-width:700px) {
+      .wrap { width:min(100% - 18px, 940px); padding-top:18px; }
+      header { display:block; }
+      .clock { display:inline-block; margin-top:12px; }
+      .summary { grid-template-columns:1fr 1fr; }
+      .summary .panel:first-child { grid-column:1 / -1; }
+      .time-fields { grid-template-columns:1fr; }
+      .current-top { display:block; }
+      .timer { margin-top:14px; }
+      .block { grid-template-columns:78px 39px 1fr auto; gap:8px; padding:11px 9px; }
+      .details { font-size:.79rem; }
+      .when { font-size:.75rem; }
+      .mins { width:38px; height:38px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <div>
+        <h1 id="pageTitle">Puerto Rico Prep Sprint</h1>
+        <p class="subtitle" id="pageSubtitle">Five focused hours. Done beats perfect tonight.</p>
+      </div>
+      <div class="clock" id="clock" aria-label="Current time">7:00 PM</div>
+    </header>
+
+    <section class="summary" aria-label="Sprint progress">
+      <div class="panel">
+        <div class="label">Overall progress</div>
+        <div class="big"><span id="doneCount">0</span> of <span id="totalCount">12</span> blocks</div>
+        <div class="progress" aria-hidden="true"><div id="progressBar"></div></div>
+      </div>
+      <div class="panel">
+        <div class="label">Finish line</div>
+        <div class="big" id="finishTime">12:00 AM</div>
+      </div>
+      <div class="panel">
+        <div class="label">Planned work</div>
+        <div class="big" id="plannedWork">5 hours</div>
+      </div>
+    </section>
+
+    <section class="panel time-setup" aria-labelledby="scheduleSettingsLabel">
+      <div class="label" id="scheduleSettingsLabel">Schedule times</div>
+      <div class="time-fields">
+        <label class="time-field" for="scheduleStart">Scheduled start
+          <input id="scheduleStart" type="time" value="19:00" required />
+        </label>
+        <label class="time-field" for="scheduleFinish">Finish line
+          <input id="scheduleFinish" type="time" value="00:00" required />
+        </label>
+      </div>
+      <p class="time-help">Start now uses the current time and your finish line. Scheduled start uses both times. Overnight schedules are supported.</p>
+    </section>
+
+    <div class="actions">
+      <button class="btn primary" id="startSprint">Start sprint now</button>
+      <button class="btn" id="startSeven">Use 7:00 PM start</button>
+      <button class="btn" id="pauseAll">Pause timer</button>
+    </div>
+
+    <section class="panel current" id="currentPanel" aria-live="polite">
+      <div class="current-top">
+        <div>
+          <div class="label">Current timebox</div>
+          <h2 id="currentName">Kitchen reset</h2>
+          <p class="note" id="currentDetails"></p>
+          <span class="status" id="trackStatus">On track</span>
+        </div>
+        <div class="timer" id="timer">45:00</div>
+      </div>
+      <div class="current-controls">
+        <button class="btn primary" id="completeCurrent">Done — next block</button>
+        <button class="btn" id="addFive">+5 minutes</button>
+        <button class="btn" id="restartBlock">Restart block</button>
+      </div>
+    </section>
+
+    <div class="bonus-note" id="bonusNotice" hidden aria-live="polite"></div>
+
+    <h3>Tonight’s schedule</h3>
+    <section class="schedule" id="schedule"></section>
+
+    <div class="rule"><strong>Hard-stop rule:</strong> <span id="hardStopText">when the timer rings, finish the one thing in your hands and move on. This is a functional reset, not a deep-clean Olympics.</span></div>
+    <div class="footer-actions"><button class="btn danger" id="resetAll">Reset everything</button></div>
+  </main>
+
+  <script>
+    // EDIT DEFAULTS HERE. Everything users can adjust without changing the timer engine is grouped in this block.
+    const planDefaults = {
+      title:'Puerto Rico Prep Sprint',
+      subtitle:'Five focused hours. Done beats perfect tonight.',
+      defaultStartTime:'19:00',
+      defaultFinishTime:'00:00',
+      hardStopRule:'When the timer rings, finish the one thing in your hands and move on. This is a functional reset, not a deep-clean Olympics.',
+      tasks:[
+        { name:'Kitchen reset', mins:45, details:'Load or stack dishes, clear sink, put items in their homes.' },
+        { name:'Kitchen finish', mins:25, details:'Wipe counters and stove, clean sink, quick floor pass.' },
+        { name:'Two bathrooms', mins:25, details:'About 12 minutes each: toilet, sink, mirror, visible floor.' },
+        { name:'Living room + hallway', mins:15, details:'Return stray items, straighten surfaces, quick floor pass.' },
+        { name:'Bedroom pickup', mins:30, details:'Clear visible clutter, make bed, create a packing surface.' },
+        { name:'Put laundry away', mins:30, details:'Fold, hang, and put away. No reorganizing drawers tonight.' },
+        { name:'Water + reset break', mins:10, details:'Drink water, breathe, do not sit-scroll.' },
+        { name:'Packing station', mins:20, details:'Get suitcase out; gather packing cubes, shoes, and travel bag.' },
+        { name:'Lay out outfits', mins:55, details:'Choose complete outfits by day, including underwear and shoes.' },
+        { name:'Hygiene inventory', mins:20, details:'Check toiletries, sunscreen, medications, grooming; write buy list.' },
+        { name:'Pack confirmed items', mins:15, details:'Put ready items into suitcase; keep uncertain items beside it.' },
+        { name:'Final reset', mins:10, details:'Bag trash, review buy list, set tomorrow’s first packing action.' }
+      ]
+    };
+    const tasks = planDefaults.tasks;
+    const key = 'pr-prep-sprint-v2';
+    const freshState = () => ({ completed:[], startAt:null, goalFinishAt:null, current:null, remaining:null, running:false, lastTick:null, customExtra:{}, actualSeconds:{}, completedAt:null, lastBonus:null, scheduleStartTime:planDefaults.defaultStartTime, scheduleFinishTime:planDefaults.defaultFinishTime, plannedSeconds:null });
+    let state = freshState();
+    let ticker;
+
+    const $ = id => document.getElementById(id);
+    const escapeHtml = value => String(value).replace(/[&<>"]/g,char=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' })[char]);
+    const fmtTime = ms => new Date(ms).toLocaleTimeString([], { hour:'numeric', minute:'2-digit' });
+    const originalTotalSeconds = () => tasks.reduce((n,t)=>n+t.mins*60,0);
+    const plannedBaseFor = i => state.plannedSeconds?.[i] ?? tasks[i].mins * 60;
+    const durationFor = i => plannedBaseFor(i) + (state.customExtra[i] || 0);
+    const scheduledDurationFor = i => state.completed.includes(i) && state.actualSeconds[i] != null ? state.actualSeconds[i] : durationFor(i);
+    const plannedTotalSeconds = () => state.plannedSeconds?.reduce((n,sec)=>n+sec,0) ?? originalTotalSeconds();
+    const fmtSpan = sec => {
+      const s=Math.max(0,Math.round(sec)), h=Math.floor(s/3600), m=Math.floor((s%3600)/60), r=s%60;
+      if(h) return `${h}h ${m}m`;
+      if(m) return `${m}m ${r ? `${r}s` : ''}`.trim();
+      return `${r}s`;
+    };
+    const firstOpen = () => tasks.findIndex((_,i) => !state.completed.includes(i));
+    function save(){ localStorage.setItem(key, JSON.stringify(state)); }
+    function load(){ try { state = { ...freshState(), ...JSON.parse(localStorage.getItem(key) || '{}') }; } catch(_){} }
+    function parseClock(value, reference){
+      const [hours,minutes]=value.split(':').map(Number), d=new Date(reference);
+      d.setHours(hours,minutes,0,0);
+      return d.getTime();
+    }
+    function selectedWindow(useNow){
+      const start=useNow ? Date.now() : parseClock($('scheduleStart').value,Date.now());
+      let finish=parseClock($('scheduleFinish').value,start);
+      if(finish<=start) finish+=24*60*60*1000;
+      return {start,finish};
+    }
+    function scaledDurations(totalSeconds){
+      let previous=0;
+      return tasks.map((task,index)=>{
+        const cumulative=tasks.slice(0,index+1).reduce((n,t)=>n+t.mins*60,0);
+        const boundary=index===tasks.length-1 ? totalSeconds : Math.round(totalSeconds*cumulative/originalTotalSeconds());
+        const duration=boundary-previous;
+        previous=boundary;
+        return duration;
+      });
+    }
+    function planWindow(start,finish){
+      state.startAt=start; state.goalFinishAt=finish;
+      state.plannedSeconds=scaledDurations(Math.max(1,Math.round((finish-start)/1000)));
+      state.customExtra={}; state.lastBonus=null; state.completedAt=null;
+      state.actualSeconds=Object.fromEntries(state.completed.map(i=>[i,state.plannedSeconds[i]]));
+      const next=firstOpen(); state.current=next<0?null:next; state.remaining=next<0?null:durationFor(next);
+      state.running=next>=0; state.lastTick=Date.now();
+      save(); render();
+    }
+    function syncTimeSettings(){
+      state.scheduleStartTime=$('scheduleStart').value;
+      state.scheduleFinishTime=$('scheduleFinish').value;
+      $('startSeven').textContent=`Use ${fmtTime(parseClock(state.scheduleStartTime,Date.now()))} start`;
+      if(!state.startAt){
+        const {start,finish}=selectedWindow(false);
+        state.plannedSeconds=scaledDurations(Math.round((finish-start)/1000));
+      }
+      save(); render();
+    }
+    function cumulativeSeconds(index){ return tasks.slice(0,index).reduce((n,t,i) => n + scheduledDurationFor(i), 0); }
+    function taskTimes(i){
+      const base = state.startAt || selectedWindow(false).start;
+      const start = base + cumulativeSeconds(i)*1000;
+      const end = start + scheduledDurationFor(i)*1000;
+      return {start,end};
+    }
+    function alarm(){
+      try {
+        const a=new (window.AudioContext||window.webkitAudioContext)();
+        [0,.22,.44].forEach(delay=>{ const o=a.createOscillator(), g=a.createGain(); o.frequency.value=740; g.gain.setValueAtTime(.12,a.currentTime+delay); g.gain.exponentialRampToValueAtTime(.001,a.currentTime+delay+.16); o.connect(g); g.connect(a.destination); o.start(a.currentTime+delay); o.stop(a.currentTime+delay+.17); });
+      } catch(_){}
+      if (navigator.vibrate) navigator.vibrate([200,100,200]);
+    }
+    function begin(startAt){
+      if (!state.startAt) state.startAt=startAt;
+      if (!state.goalFinishAt) state.goalFinishAt=state.startAt+plannedTotalSeconds()*1000;
+      if (state.current===null || state.completed.includes(state.current)) state.current=firstOpen();
+      if (state.current<0) return render();
+      if (state.remaining===null) state.remaining=durationFor(state.current);
+      state.running=true; state.lastTick=Date.now(); save(); render();
+    }
+    function activate(i){
+      if (state.completed.includes(i)) state.completed=state.completed.filter(x=>x!==i);
+      state.current=i; state.remaining=durationFor(i); state.running=true; state.lastTick=Date.now();
+      if (!state.startAt) state.startAt=Date.now()-cumulativeSeconds(i)*1000;
+      if (!state.goalFinishAt) state.goalFinishAt=state.startAt+plannedTotalSeconds()*1000;
+      save(); render();
+    }
+    function complete(i){
+      if (i<0) return;
+      if (!state.completed.includes(i)) {
+        const wasTimedTask=state.current===i;
+        const allocated=durationFor(i);
+        const spare=wasTimedTask ? Math.max(0,Math.floor(state.remaining ?? 0)) : 0;
+        state.actualSeconds[i]=wasTimedTask ? Math.max(1,allocated-spare+Math.max(0,-(state.remaining ?? 0))) : allocated;
+        state.completed.push(i);
+        const open=tasks.map((_,index)=>index).filter(index=>index!==i && !state.completed.includes(index));
+        if (spare>0 && open.length){
+          const share=Math.floor(spare/open.length), remainder=spare%open.length;
+          open.forEach((index,pos)=>state.customExtra[index]=(state.customExtra[index]||0)+share+(pos<remainder?1:0));
+          state.lastBonus={seconds:spare,count:open.length};
+        } else {
+          state.lastBonus=null;
+        }
+      }
+      state.completed.sort((a,b)=>a-b);
+      const next=firstOpen(); state.current=next<0?null:next; state.remaining=next<0?null:durationFor(next); state.running=next>=0; state.lastTick=Date.now();
+      if(next<0) state.completedAt=Date.now();
+      save(); render();
+    }
+    function tick(){
+      $('clock').textContent=new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit',second:'2-digit'});
+      if (!state.running || state.current===null) return;
+      const now=Date.now(), elapsed=Math.floor((now-(state.lastTick||now))/1000);
+      if (elapsed>0){
+        state.remaining-=elapsed; state.lastTick=now;
+        if (state.remaining<=0 && state.remaining+elapsed>0) alarm();
+        save(); render(false);
+      }
+    }
+    function render(full=true){
+      const total=tasks.length, done=state.completed.length;
+      $('doneCount').textContent=done; $('totalCount').textContent=total; $('progressBar').style.width=`${done/total*100}%`;
+      const preview=selectedWindow(false);
+      const finish=state.goalFinishAt || preview.finish;
+      $('finishTime').textContent=fmtTime(finish);
+      $('plannedWork').textContent=fmtSpan(plannedTotalSeconds());
+      $('pauseAll').textContent=state.running?'Pause timer':'Resume timer';
+      $('currentPanel').classList.remove('celebration');
+      if(state.lastBonus && done<total){
+        $('bonusNotice').hidden=false;
+        $('bonusNotice').textContent=`⚡ ${fmtSpan(state.lastBonus.seconds)} saved and shared across ${state.lastBonus.count} remaining tasks. Your ${fmtTime(finish)} finish line stays put.`;
+      } else $('bonusNotice').hidden=true;
+      if (state.current!==null && state.current>=0){
+        const t=tasks[state.current], remain=state.remaining ?? durationFor(state.current), overtime=remain<0;
+        $('currentPanel').classList.add('show'); $('currentName').textContent=t.name; $('currentDetails').textContent=t.details;
+        const abs=Math.abs(remain), mm=Math.floor(abs/60), ss=abs%60;
+        $('timer').textContent=`${overtime?'+':''}${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+        const scheduledEnd=taskTimes(state.current).end;
+        $('trackStatus').textContent=overtime?`Timebox ended — move on`:`On track · done by ${fmtTime(scheduledEnd)}`;
+        $('trackStatus').classList.toggle('overtime',overtime);
+      } else {
+        $('currentPanel').classList.toggle('show',done===total);
+        if(done===total){
+          const earlyBy=Math.min(plannedTotalSeconds()*1000,Math.max(0,finish-(state.completedAt||Date.now())));
+          $('currentPanel').classList.toggle('celebration',earlyBy>0);
+          $('currentName').textContent=earlyBy>0?'🎉 You beat the clock!':'Sprint complete';
+          $('currentDetails').textContent=earlyBy>0?`All ${tasks.length} tasks finished ${fmtSpan(earlyBy)} early. Home reset, packing started, and extra time reclaimed.`:'Home reset and Puerto Rico packing started. That is a strong night.';
+          $('timer').textContent=earlyBy>0?`${fmtSpan(earlyBy)} EARLY`:'DONE';
+          $('trackStatus').textContent=earlyBy>0?'Fast work. Enjoy the time you earned.':'You made it';
+        }
+      }
+      if (!full) return;
+      $('schedule').innerHTML=tasks.map((t,i)=>{
+        const tt=taskTimes(i), isDone=state.completed.includes(i), active=state.current===i, bonus=state.customExtra[i]||0;
+        return `<article class="block ${isDone?'done':''} ${active?'active':''}">
+          <div class="when">${fmtTime(tt.start)}<br>– ${fmtTime(tt.end)}</div>
+          <div class="mins">${Math.round(scheduledDurationFor(i)/60)}m</div>
+          <div><div class="task-name">${escapeHtml(t.name)}</div><div class="details">${escapeHtml(t.details)}</div>${bonus&&!isDone?`<span class="bonus-tag">+${fmtSpan(bonus)} shared time</span>`:''}</div>
+          <input class="check" type="checkbox" aria-label="Complete ${escapeHtml(t.name)}" data-index="${i}" ${isDone?'checked':''} />
+        </article>`;
+      }).join('');
+      document.querySelectorAll('.check').forEach(el=>el.addEventListener('change',e=>{
+        const i=Number(e.target.dataset.index);
+        if(e.target.checked) complete(i); else { state.completed=state.completed.filter(x=>x!==i); delete state.actualSeconds[i]; state.completedAt=null; if(state.current===null){state.current=i;state.remaining=durationFor(i);} save(); render(); }
+      }));
+    }
+
+    $('startSprint').onclick=()=>{ const window=selectedWindow(true); planWindow(window.start,window.finish); };
+    $('startSeven').onclick=()=>{ const window=selectedWindow(false); planWindow(window.start,window.finish); };
+    $('pauseAll').onclick=()=>{ if(state.current===null) return begin(Date.now()); state.running=!state.running; state.lastTick=Date.now(); save(); render(); };
+    $('completeCurrent').onclick=()=>complete(state.current);
+    $('addFive').onclick=()=>{ if(state.current===null)return; state.remaining=(state.remaining??0)+300; state.customExtra[state.current]=(state.customExtra[state.current]||0)+300; save(); render(); };
+    $('restartBlock').onclick=()=>{ if(state.current===null)return; state.remaining=durationFor(state.current); state.running=true; state.lastTick=Date.now(); save(); render(); };
+    $('resetAll').onclick=()=>{ if(confirm('Reset all timers and completed blocks?')){ localStorage.removeItem(key); state=freshState(); render(); } };
+    load();
+    document.title=planDefaults.title;
+    $('pageTitle').textContent=planDefaults.title;
+    $('pageSubtitle').textContent=planDefaults.subtitle;
+    $('hardStopText').textContent=planDefaults.hardStopRule;
+    $('scheduleStart').value=state.scheduleStartTime;
+    $('scheduleFinish').value=state.scheduleFinishTime;
+    $('scheduleStart').addEventListener('change',syncTimeSettings);
+    $('scheduleFinish').addEventListener('change',syncTimeSettings);
+    $('startSeven').textContent=`Use ${fmtTime(parseClock(state.scheduleStartTime,Date.now()))} start`;
+    render(); tick(); ticker=setInterval(tick,1000);
+  </script>
+</body>
+</html>
