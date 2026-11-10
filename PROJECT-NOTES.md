@@ -26,7 +26,7 @@ The current schedule is embedded directly in the HTML. Do not refactor it before
 
 ## Repository and publishing
 
-- Canonical local location: `/Users/jramirez/Git/Doomsday-Countdown`
+- Local location: `<project-root>` (wherever you cloned the repo)
 - The repository is local-first and keeps `.env`, deployment state, packages, editor metadata, build output, and logs out of Git.
 - Put `HERENOW_API_KEY` in the ignored root-level `.env` or the here.now-recommended `~/.herenow/credentials` file.
 - `publish.mjs` is the only publishing entry point. It uploads only `index.html`; see `PUBLISHING.md`.
